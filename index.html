@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+		<meta content="utf-8" http-equiv="encoding">
+		<title>Anonymous YouTube Playlists</title>
+		<style type="text/css">
+			*{
+				font-family:Courier;
+				margin:0;
+			}
+			html{
+				height:100%;
+			}
+			body{
+				background-color:#FFF8E7;
+				height:100%;
+				padding-left:6px;
+			}
+			h2{
+				color:salmon;
+				padding-top:18px;
+			}
+			i{
+				font-size:12px;
+			}
+			input{
+				width:600px;
+				height:20px;
+				display:block;
+				margin-top:10px;
+				margin-bottom:10px;
+			}
+			textarea{
+				width:600px;
+				height:300px;
+				display:block;
+				margin-top:10px;
+				margin-bottom:10px;
+			}
+			button{
+				display:block;
+				font-size:16px;
+				background-color:silver;
+			}
+			#source_url{
+				position:absolute;
+				bottom:6px;
+			}
+			#wrap{
+				min-height:100%;
+			}
+			#main{
+				padding-bottom:50px;
+			}
+			#footer{
+				position:relative;
+			}
+			#footer a{
+				color:salmon;
+			}
+			#footer a:link, #footer a:visited, #footer a:active{
+				text-decoration:none;
+			}
+			#footer a:hover{
+				color:#ffa07a;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="wrap">
+			<div id="main">
+				<h2>A simple tool for generating a YouTube playlist that isn't tied to an account</h2>
+				<i>note: works for up to 50 videos</i>
+				<br /><br /><br />
+				<p>playlist URL:</p>
+				<input></input>
+				<br />
+				<p>comma separated list of videos:</p>
+				<textarea></textarea>
+				<br />
+				<button id="button_url">use existing playlist</button>
+				<p>create anonymous playlist from existing playlist URL</p>
+				<br />
+				<button id="button_list">use list of videos</button>
+				<p>create anonymous playlist from comma separated list of videos</p>
+				<br />
+				<button id="button_both">use both</button>
+				<p>create anonymous playlist starting from existing playlist URL and add from comma separated list of videos</p>
+				<br />
+				<button id="button_both_v2">use both v2</button>
+				<p>version of use both where the URL is an original anonymous one (e.g. https://www.youtube.com/watch_videos?video_ids=ID1,ID2,ID3,ID4...IDn) <b>WITHOUT</b> a trailing comma</p>
+				<br />
+				<a id="new_playlist_url"></a>
+				<br /><br />
+				<p>note: be sure to keep this version of the URL as the playlist it generates is automatically deleted after some time</p>
+			</div>
+		</div>
+		<div id="footer">
+			<a id="source_url" href="https://github.com/neverducky/anonymous-youtube-playlists">source</a>
+		</div>
+	</body>
+	<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+	<script type="text/javascript">
+		var base_url = 'https://www.youtube.com/watch_videos?video_ids=';//initialize as base URL (video ID concatenations to come) the string
+		var video_ids = [];//initialize as empty the array for storing video IDs
+		function resetNewUrl(){//set to base value the new URL
+			$('#new_playlist_url').text(base_url);//set to base url the new URL text
+			$('#new_playlist_url').attr('href', base_url);//reset href attribute of new URL
+		}
+		function extractVideoIdsFromPlaylistUrl(callbackFunction){//extract and store in array video_ids for callback function the video IDs from the given existing playlist URL
+			$.get(//API call
+				"https://www.googleapis.com/youtube/v3/playlistItems",{//API URL for YouTube's playlistItems
+					part:'contentDetails',//contentDetails contains the video ID of each playlistItem
+					maxResults:'50',//50 is the maximum value for maxResults
+					playlistId:$('input').val().match("list=([a-zA-Z0-9\-\_]+)&?")[1],//value is the extracted playlist ID
+					key:'AIzaSyCdi1yWNeCCUKcEJSsBXlPumlDbUCBTX1U'},//value is the API key
+					function(data){//function of received data
+						$.each(data.items, function(i, item){//for each item in the received data
+							video_ids[i] = item.contentDetails.videoId;//store in array video_ids the item's videoId
+						});
+						callbackFunction();//happens once the for each loop is done
+					}
+			);
+		}
+		function extractVideoIdsFromList(){//extract and store for return in array video_ids the video IDs from URLs listed in the textarea
+			var video_ids = $('textarea').val().split(',');//initialize array video_ids as textarea split at each comma
+			$.each(video_ids, function(i){//for each element in array video_ids
+				video_ids[i] = this.match("v=([a-zA-Z0-9\-\_]+)&?")[1];//store in array video_ids the extracted video ID
+			});
+			return video_ids;//return array of video IDs
+		}
+		function appendVideoIds(video_ids){//append to the new URL text the video IDs and set the new URL's href accordingly
+			$.each(video_ids, function(){//for each element in array video_ids
+				$('#new_playlist_url').append(this + ',');//append to the new URL text the video ID and a comma
+				$('#new_playlist_url').attr('href', $('#new_playlist_url').attr('href') + this + ',');//set to current href and the video ID and a comma the new URL's href
+			});
+		}
+		$('#button_url').click(function() {//when button button_url is clicked
+			resetNewUrl();
+			extractVideoIdsFromPlaylistUrl(function(){//call extraction function with callback to append the results
+				appendVideoIds(video_ids);//callback function to append the results
+			});
+		});
+		$('#button_list').click(function() {//when button button_list is clicked
+			resetNewUrl();
+			appendVideoIds(extractVideoIdsFromList());//append to the new URL text the video IDs and set to values extracted from URLs listed in the textarea the new URL's href
+		});
+		$('#button_both').click(function() {//when button button_both is clicked
+			resetNewUrl();
+			extractVideoIdsFromPlaylistUrl(function(){//call extraction function with callback to append the results
+				appendVideoIds(video_ids);//callback function to append the results
+				appendVideoIds(extractVideoIdsFromList());//append to the new URL text the video IDs and set to the values extracted from URLs listed in the textarea the new URL's href
+			});//hey I know it's not the most elegant solution but JavaScript is not the most elegant language. also I'm a noob
+		});
+		$('#button_both_v2').click(function() {//when button button_both_v2 is clicked
+			resetNewUrl();
+			var new_url = $('input').val();//initialize as the value of the input the string
+			$('#new_playlist_url').text(new_url + ',');//set the new URL text to new_url and a comma
+			$('#new_playlist_url').attr('href', new_url + ',');//set the new URL href attribute to new_url and a comma
+			appendVideoIds(extractVideoIdsFromList());//append to the new URL text the video IDs and set the new URL's href to the values extracted from URLs listed in the textarea
+		});
+	</script>
+</html>
