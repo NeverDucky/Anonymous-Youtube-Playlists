@@ -70,6 +70,8 @@
 	<body>
 		<div id="wrap">
 			<div id="main">
+				<p>discontinued</p>
+				<br />
 				<h2>A simple tool for generating a YouTube playlist that isn't tied to an account</h2>
 				<i>note: works for up to 50 videos</i>
 				<br /><br /><br />
@@ -114,7 +116,7 @@
 					part:'contentDetails',//contentDetails contains the video ID of each playlistItem
 					maxResults:'50',//50 is the maximum value for maxResults
 					playlistId:$('input').val().match("list=([a-zA-Z0-9\-\_]+)&?")[1],//value is the extracted playlist ID
-					key:'AIzaSyCdi1yWNeCCUKcEJSsBXlPumlDbUCBTX1U'},//value is the API key
+					key:'[redacted]'},//value is the API key
 					function(data){//function of received data
 						$.each(data.items, function(i, item){//for each item in the received data
 							video_ids[i] = item.contentDetails.videoId;//store in array video_ids the item's videoId
